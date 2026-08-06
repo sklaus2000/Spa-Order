@@ -11,7 +11,7 @@
 ---------------------------------------------------------- */
 
 const CONFIG = window.APP_CONFIG;
-const MENU = window.MENU_DATA;
+let MENU = window.MENU_DATA;
 
 if (!CONFIG) {
   throw new Error("APP_CONFIG could not be loaded.");
@@ -106,6 +106,12 @@ const translations = {
     demoRequestSent:
       "Test request completed successfully.",
 
+    announcementLabel: "Today at the Mountain Health Bar",
+    weatherLabel: "Weather in Jochberg",
+    temperatureLabel: "Temperature",
+    uvLabel: "UV Index",
+    weatherUnavailable: "Weather currently unavailable",
+
     emptyCategory:
       "No items are currently listed in this category."
   },
@@ -190,6 +196,12 @@ const translations = {
     demoRequestSent:
       "Die Testanfrage wurde erfolgreich abgeschlossen.",
 
+    announcementLabel: "Heute in der Mountain Health Bar",
+    weatherLabel: "Wetter in Jochberg",
+    temperatureLabel: "Temperatur",
+    uvLabel: "UV-Index",
+    weatherUnavailable: "Wetter derzeit nicht verfügbar",
+
     emptyCategory:
       "In dieser Kategorie sind derzeit keine Artikel eingetragen."
   }
@@ -208,7 +220,9 @@ const state = {
   lastRequestType: null,
   lastRequestTime: null,
   reminderTimer: null,
-  toastTimer: null
+  toastTimer: null,
+  settings: {},
+  weather: null
 };
 
 
@@ -262,6 +276,20 @@ const reminderButton = document.getElementById("reminderButton");
 const loadingOverlay = document.getElementById("loadingOverlay");
 const toast = document.getElementById("toast");
 
+const guestInformation = document.getElementById("guestInformation");
+const announcementCard = document.getElementById("announcementCard");
+const announcementLabel = document.getElementById("announcementLabel");
+const announcementTitle = document.getElementById("announcementTitle");
+const announcementText = document.getElementById("announcementText");
+
+const weatherCard = document.getElementById("weatherCard");
+const weatherLabel = document.getElementById("weatherLabel");
+const weatherIcon = document.getElementById("weatherIcon");
+const weatherCondition = document.getElementById("weatherCondition");
+const weatherTemperature = document.getElementById("weatherTemperature");
+const weatherUv = document.getElementById("weatherUv");
+const weatherUvValue = document.getElementById("weatherUvValue");
+
 
 /* ----------------------------------------------------------
    INITIALIZATION
@@ -269,19 +297,37 @@ const toast = document.getElementById("toast");
 
 document.addEventListener("DOMContentLoaded", initializeApp);
 
-function initializeApp() {
+async function initializeApp() {
   state.location = getLocationObject();
 
   updateLanguageButtons();
   updateTranslations();
   updateLocationLabels();
 
+  await Promise.all([
+    loadMenuFromGoogleSheets(),
+    loadCategoriesFromGoogleSheets(),
+    loadSettingsFromGoogleSheets()
+  ]);
+
   renderMenu();
   updateOpeningStatus();
+  renderAnnouncement();
+  updateWeatherVisibility();
 
   addEventListeners();
+  initializePremiumAnimations();
+
+  if (isSettingEnabled("Weather Widget", true)) {
+    loadWeather();
+  }
 
   window.setInterval(updateOpeningStatus, 30000);
+  window.setInterval(loadWeather, 30 * 60 * 1000);
+
+  window.requestAnimationFrame(function () {
+    document.body.classList.add("app-ready");
+  });
 }
 
 
@@ -403,6 +449,8 @@ function setLanguage(language) {
   updateLocationLabels();
   renderMenu();
   updateOpeningStatus();
+  renderAnnouncement();
+  updateWeatherDisplay();
 }
 
 function updateLanguageButtons() {
@@ -542,13 +590,638 @@ function updateOpeningStatus() {
   towelsButton.disabled = !open;
 
   closedPanel.classList.toggle("hidden", open);
+
+  const hoursText = formatOpeningHoursText();
+  const closedHoursElement = closedPanel.querySelector(
+    '[data-i18n="openingHoursMessage"]'
+  );
+
+  if (closedHoursElement) {
+    closedHoursElement.textContent = hoursText;
+  }
 }
 
 
 /* ----------------------------------------------------------
-   MENU RENDERING
+   REMOTE SETTINGS, CATEGORIES AND WEATHER
 ---------------------------------------------------------- */
 
+async function loadSettingsFromGoogleSheets() {
+  if (!CONFIG.settingsApiUrl) {
+    return;
+  }
+
+  try {
+    const response = await fetch(CONFIG.settingsApiUrl, {
+      method: "GET",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "Settings server returned status " + response.status
+      );
+    }
+
+    const result = await response.json();
+
+    if (
+      result.success !== true ||
+      !result.settings ||
+      typeof result.settings !== "object"
+    ) {
+      throw new Error(
+        result.message || "Invalid settings response."
+      );
+    }
+
+    state.settings = result.settings;
+
+    applyOpeningHoursFromSettings();
+
+  } catch (error) {
+    console.error(
+      "Google Sheets settings could not be loaded:",
+      error
+    );
+  }
+}
+
+async function loadCategoriesFromGoogleSheets() {
+  if (!CONFIG.categoriesApiUrl) {
+    return;
+  }
+
+  try {
+    const response = await fetch(CONFIG.categoriesApiUrl, {
+      method: "GET",
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        "Categories server returned status " + response.status
+      );
+    }
+
+    const result = await response.json();
+
+    if (
+      result.success !== true ||
+      !Array.isArray(result.categories)
+    ) {
+      throw new Error(
+        result.message || "Invalid categories response."
+      );
+    }
+
+    if (result.categories.length > 0) {
+      MENU.categories = result.categories;
+    }
+
+  } catch (error) {
+    console.error(
+      "Google Sheets categories could not be loaded:",
+      error
+    );
+  }
+}
+
+function applyOpeningHoursFromSettings() {
+  const openingValue = getSettingValue("Opening Time", "en");
+  const closingValue = getSettingValue("Closing Time", "en");
+
+  const opening = parseTimeValue(openingValue);
+  const closing = parseTimeValue(closingValue);
+
+  if (opening) {
+    CONFIG.openingHour = opening.hour;
+    CONFIG.openingMinute = opening.minute;
+  }
+
+  if (closing) {
+    CONFIG.closingHour = closing.hour;
+    CONFIG.closingMinute = closing.minute;
+  }
+}
+
+function parseTimeValue(value) {
+  const match = String(value || "")
+    .trim()
+    .match(/^(\d{1,2}):(\d{2})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+
+  if (
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+
+  return {
+    hour: hour,
+    minute: minute
+  };
+}
+
+function getSetting(settingName) {
+  return state.settings[settingName] || null;
+}
+
+function getSettingValue(settingName, language) {
+  const setting = getSetting(settingName);
+
+  if (!setting) {
+    return "";
+  }
+
+  return (
+    setting[language] ||
+    setting.en ||
+    setting.de ||
+    ""
+  );
+}
+
+function isSettingEnabled(settingName, fallbackValue) {
+  const setting = getSetting(settingName);
+
+  if (!setting) {
+    return fallbackValue;
+  }
+
+  return setting.active === true;
+}
+
+function formatTime(hour, minute) {
+  return (
+    String(hour).padStart(2, "0") +
+    ":" +
+    String(minute).padStart(2, "0")
+  );
+}
+
+function formatOpeningHoursText() {
+  const opening = formatTime(
+    CONFIG.openingHour,
+    CONFIG.openingMinute
+  );
+
+  const closing = formatTime(
+    CONFIG.closingHour,
+    CONFIG.closingMinute
+  );
+
+  if (state.language === "de") {
+    return (
+      "Unsere Öffnungszeiten sind von " +
+      opening +
+      " bis " +
+      closing +
+      " Uhr."
+    );
+  }
+
+  return (
+    "Our opening hours are from " +
+    opening +
+    " to " +
+    closing +
+    "."
+  );
+}
+
+function renderAnnouncement() {
+  if (!announcementCard) {
+    return;
+  }
+
+  const titleSetting = getSetting("Announcement Title");
+  const textSetting = getSetting("Announcement Text");
+
+  const isActive =
+    Boolean(titleSetting && titleSetting.active) &&
+    Boolean(textSetting && textSetting.active);
+
+  const title = getSettingValue(
+    "Announcement Title",
+    state.language
+  );
+
+  const text = getSettingValue(
+    "Announcement Text",
+    state.language
+  );
+
+  if (!isActive || (!title && !text)) {
+    announcementCard.classList.add("hidden");
+    updateGuestInformationVisibility();
+    return;
+  }
+
+  announcementLabel.textContent =
+    translations[state.language].announcementLabel;
+
+  announcementTitle.textContent = title;
+  announcementText.textContent = text;
+
+  announcementCard.classList.remove("hidden");
+  updateGuestInformationVisibility();
+}
+
+function updateWeatherVisibility() {
+  if (!weatherCard) {
+    return;
+  }
+
+  const showWeather = isSettingEnabled(
+    "Weather Widget",
+    true
+  );
+
+  weatherCard.classList.toggle("hidden", !showWeather);
+
+  if (weatherUv) {
+    weatherUv.classList.toggle(
+      "hidden",
+      !isSettingEnabled("UV Widget", true)
+    );
+  }
+
+  updateGuestInformationVisibility();
+}
+
+function updateGuestInformationVisibility() {
+  if (!guestInformation) {
+    return;
+  }
+
+  const hasVisibleCard =
+    !announcementCard.classList.contains("hidden") ||
+    !weatherCard.classList.contains("hidden");
+
+  guestInformation.classList.toggle(
+    "hidden",
+    !hasVisibleCard
+  );
+}
+
+async function loadWeather() {
+  if (
+    !weatherCard ||
+    !isSettingEnabled("Weather Widget", true)
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      CONFIG.weatherApiUrl,
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Weather server returned status " + response.status
+      );
+    }
+
+    const result = await response.json();
+
+    const current = result.current || {};
+    const daily = result.daily || {};
+
+    state.weather = {
+      temperature:
+        typeof current.temperature_2m === "number"
+          ? current.temperature_2m
+          : null,
+
+      weatherCode:
+        typeof current.weather_code === "number"
+          ? current.weather_code
+          : null,
+
+      uvIndex:
+        Array.isArray(daily.uv_index_max) &&
+        typeof daily.uv_index_max[0] === "number"
+          ? daily.uv_index_max[0]
+          : null
+    };
+
+    updateWeatherDisplay();
+
+  } catch (error) {
+    console.error("Weather could not be loaded:", error);
+
+    state.weather = null;
+    updateWeatherDisplay();
+  }
+}
+
+function updateWeatherDisplay() {
+  if (!weatherCard) {
+    return;
+  }
+
+  weatherLabel.textContent =
+    translations[state.language].weatherLabel;
+
+  if (!state.weather) {
+    weatherCondition.textContent =
+      translations[state.language].weatherUnavailable;
+
+    weatherTemperature.textContent = "–";
+    weatherUvValue.textContent = "–";
+    weatherIcon.textContent = "○";
+    return;
+  }
+
+  const weatherDetails = getWeatherCodeDetails(
+    state.weather.weatherCode,
+    state.language
+  );
+
+  weatherCondition.textContent = weatherDetails.label;
+  weatherIcon.textContent = weatherDetails.icon;
+
+  weatherTemperature.textContent =
+    state.weather.temperature === null
+      ? "–"
+      : Math.round(state.weather.temperature) + "°C";
+
+  weatherUvValue.textContent =
+    state.weather.uvIndex === null
+      ? "–"
+      : formatUvIndex(state.weather.uvIndex);
+}
+
+function formatUvIndex(value) {
+  const roundedValue = Math.round(value * 10) / 10;
+  const level = getUvLevel(roundedValue, state.language);
+
+  return roundedValue + " · " + level;
+}
+
+function getUvLevel(value, language) {
+  const labels = language === "de"
+    ? ["Niedrig", "Mäßig", "Hoch", "Sehr hoch", "Extrem"]
+    : ["Low", "Moderate", "High", "Very high", "Extreme"];
+
+  if (value < 3) {
+    return labels[0];
+  }
+
+  if (value < 6) {
+    return labels[1];
+  }
+
+  if (value < 8) {
+    return labels[2];
+  }
+
+  if (value < 11) {
+    return labels[3];
+  }
+
+  return labels[4];
+}
+
+function getWeatherCodeDetails(code, language) {
+  const descriptions = {
+    0: {
+      en: "Clear sky",
+      de: "Klarer Himmel",
+      icon: "☀"
+    },
+    1: {
+      en: "Mainly clear",
+      de: "Überwiegend klar",
+      icon: "☀"
+    },
+    2: {
+      en: "Partly cloudy",
+      de: "Teilweise bewölkt",
+      icon: "◐"
+    },
+    3: {
+      en: "Overcast",
+      de: "Bedeckt",
+      icon: "☁"
+    },
+    45: {
+      en: "Fog",
+      de: "Nebel",
+      icon: "≋"
+    },
+    48: {
+      en: "Rime fog",
+      de: "Raureifnebel",
+      icon: "≋"
+    },
+    51: {
+      en: "Light drizzle",
+      de: "Leichter Nieselregen",
+      icon: "☂"
+    },
+    53: {
+      en: "Drizzle",
+      de: "Nieselregen",
+      icon: "☂"
+    },
+    55: {
+      en: "Heavy drizzle",
+      de: "Starker Nieselregen",
+      icon: "☂"
+    },
+    61: {
+      en: "Light rain",
+      de: "Leichter Regen",
+      icon: "☂"
+    },
+    63: {
+      en: "Rain",
+      de: "Regen",
+      icon: "☂"
+    },
+    65: {
+      en: "Heavy rain",
+      de: "Starker Regen",
+      icon: "☂"
+    },
+    71: {
+      en: "Light snow",
+      de: "Leichter Schneefall",
+      icon: "✦"
+    },
+    73: {
+      en: "Snow",
+      de: "Schneefall",
+      icon: "✦"
+    },
+    75: {
+      en: "Heavy snow",
+      de: "Starker Schneefall",
+      icon: "✦"
+    },
+    80: {
+      en: "Light showers",
+      de: "Leichte Schauer",
+      icon: "☂"
+    },
+    81: {
+      en: "Showers",
+      de: "Schauer",
+      icon: "☂"
+    },
+    82: {
+      en: "Heavy showers",
+      de: "Starke Schauer",
+      icon: "☂"
+    },
+    95: {
+      en: "Thunderstorm",
+      de: "Gewitter",
+      icon: "ϟ"
+    },
+    96: {
+      en: "Thunderstorm with hail",
+      de: "Gewitter mit Hagel",
+      icon: "ϟ"
+    },
+    99: {
+      en: "Heavy thunderstorm",
+      de: "Starkes Gewitter",
+      icon: "ϟ"
+    }
+  };
+
+  const details = descriptions[code] || {
+    en: "Current weather",
+    de: "Aktuelles Wetter",
+    icon: "○"
+  };
+
+  return {
+    label: details[language] || details.en,
+    icon: details.icon
+  };
+}
+
+
+/* ----------------------------------------------------------
+   PREMIUM ANIMATIONS
+---------------------------------------------------------- */
+
+function initializePremiumAnimations() {
+  const animatedElements = document.querySelectorAll(
+    ".guest-info-card, .section-heading, .menu-category, .menu-footer"
+  );
+
+  if (!("IntersectionObserver" in window)) {
+    animatedElements.forEach(function (element) {
+      element.classList.add("revealed");
+    });
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    function (entries, currentObserver) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) {
+          return;
+        }
+
+        entry.target.classList.add("revealed");
+        currentObserver.unobserve(entry.target);
+      });
+    },
+    {
+      rootMargin: "0px 0px -8% 0px",
+      threshold: 0.08
+    }
+  );
+
+  animatedElements.forEach(function (element) {
+    observer.observe(element);
+  });
+}
+
+/* ----------------------------------------------------------
+   MENU RENDERING
+---------------------------------------------------------- */
+/* ----------------------------------------------------------
+   LOAD MENU FROM GOOGLE SHEETS
+---------------------------------------------------------- */
+
+async function loadMenuFromGoogleSheets() {
+  if (!CONFIG.menuApiUrl) {
+    console.warn(
+      "No menu API URL configured. Using local menu data."
+    );
+
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      CONFIG.menuApiUrl,
+      {
+        method: "GET",
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        "Menu server returned status " + response.status
+      );
+    }
+
+    const result = await response.json();
+
+    if (
+      result.success !== true ||
+      !Array.isArray(result.items)
+    ) {
+      throw new Error(
+        result.message || "Invalid menu response."
+      );
+    }
+
+    MENU = {
+      categories: MENU.categories,
+      items: result.items
+    };
+
+    console.log(
+      "Menu loaded from Google Sheets:",
+      result.items.length,
+      "products"
+    );
+
+  } catch (error) {
+    console.error(
+      "Google Sheets menu could not be loaded:",
+      error
+    );
+
+    console.warn(
+      "The local menu-data.js file will be used instead."
+    );
+  }
+}
 function renderMenu() {
   menuNavigation.innerHTML = "";
   menuContent.innerHTML = "";

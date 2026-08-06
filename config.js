@@ -32,8 +32,9 @@ window.APP_CONFIG = {
     Google Apps Script and Telegram.
   */
   webAppUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec",
-
-  /* Default location if no valid QR-code location is detected */
+menuApiUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=menu",
+settingsApiUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=settings",  
+/* Default location if no valid QR-code location is detected */
   defaultLocation: {
     en: "Mountain Health Bar",
     de: "Mountain Health Bar"
