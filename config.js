@@ -6,7 +6,7 @@
 window.APP_CONFIG = {
   hotelName: "Mountain Health Bar",
 
-  /* Opening hours in Austrian local time */
+  /* Fallback opening hours if Google Sheets is unavailable */
   timeZone: "Europe/Vienna",
   openingHour: 11,
   openingMinute: 0,
@@ -16,36 +16,34 @@ window.APP_CONFIG = {
   /* Reminder appears after five minutes */
   reminderDelayMilliseconds: 5 * 60 * 1000,
 
-  /*
-    TEST MODE
-
-    true:
-    Requests are simulated and no Telegram message is sent.
-
-    false:
-    Requests are sent to the Google Apps Script URL below.
-  */
+  /* false = live Telegram and Google Sheets requests */
   demoMode: false,
 
+  /* Google Apps Script backend */
+  webAppUrl:
+    "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec",
+
+  menuApiUrl:
+    "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=menu",
+
+  categoriesApiUrl:
+    "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=categories",
+
+  settingsApiUrl:
+    "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=settings",
+
   /*
-    This URL will be added later when we connect
-    Google Apps Script and Telegram.
+    Open-Meteo weather for Jochberg.
+    No personal API key is required.
   */
-  webAppUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec",
-menuApiUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=menu",
-settingsApiUrl: "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=settings",  
-/* Default location if no valid QR-code location is detected */
+  weatherApiUrl:
+    "https://api.open-meteo.com/v1/forecast?latitude=47.379&longitude=12.418&current=temperature_2m,weather_code&daily=uv_index_max&timezone=Europe%2FVienna&forecast_days=1",
+
   defaultLocation: {
     en: "Mountain Health Bar",
     de: "Mountain Health Bar"
   },
 
-  /*
-    Locations used in the QR-code links.
-
-    Example:
-    ?area=indoor-pool
-  */
   locations: {
     "indoor-pool": {
       en: "Indoor Pool",

@@ -89,6 +89,85 @@
           >
         </div>
 
+        <section
+          class="guest-information hidden"
+          id="guestInformation"
+          aria-label="Current guest information"
+        >
+
+          <article
+            class="guest-info-card announcement-card hidden"
+            id="announcementCard"
+          >
+            <span
+              class="guest-info-eyebrow"
+              id="announcementLabel"
+            >
+              Today at the Mountain Health Bar
+            </span>
+
+            <h2
+              class="guest-info-title"
+              id="announcementTitle"
+            ></h2>
+
+            <p
+              class="guest-info-text"
+              id="announcementText"
+            ></p>
+          </article>
+
+          <article
+            class="guest-info-card weather-card hidden"
+            id="weatherCard"
+          >
+            <div class="weather-main">
+              <span
+                class="weather-icon"
+                id="weatherIcon"
+                aria-hidden="true"
+              >
+                ○
+              </span>
+
+              <div>
+                <span
+                  class="guest-info-eyebrow"
+                  id="weatherLabel"
+                >
+                  Weather in Jochberg
+                </span>
+
+                <strong
+                  class="weather-temperature"
+                  id="weatherTemperature"
+                >
+                  –
+                </strong>
+
+                <span
+                  class="weather-condition"
+                  id="weatherCondition"
+                >
+                  Loading weather
+                </span>
+              </div>
+            </div>
+
+            <div
+              class="weather-uv"
+              id="weatherUv"
+            >
+              <span>UV</span>
+
+              <strong id="weatherUvValue">
+                –
+              </strong>
+            </div>
+          </article>
+
+        </section>
+
         <p
           class="hero-eyebrow"
           data-i18n="welcomeEyebrow"
