@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <meta
+    name="description"
+    content="Mountain Health Bar pool service and digital menu"
+  >
+
+  <meta name="theme-color" content="#101318">
+
+  <title>Mountain Health Bar</title>
+
+  <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/logo.png">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Decorative background -->
+  <div class="page-background" aria-hidden="true"></div>
+
+  <!-- Sticky header -->
+  <header class="site-header" id="siteHeader">
+    <div class="header-inner">
+
+      <button
+        class="header-logo-button"
+        id="homeButton"
+        type="button"
+        aria-label="Return to top"
+      >
+        <img
+          class="header-logo"
+          src="images/logo.png"
+          alt="Mountain Health Bar"
+        >
+      </button>
+
+      <div class="language-switcher" aria-label="Language selection">
+        <button
+          class="language-button active"
+          id="languageEn"
+          type="button"
+          data-language="en"
+        >
+          EN
+        </button>
+
+        <span class="language-divider" aria-hidden="true">|</span>
+
+        <button
+          class="language-button"
+          id="languageDe"
+          type="button"
+          data-language="de"
+        >
+          DE
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main>
+
+    <!-- Hero section -->
+    <section class="hero-section" id="home">
+
+      <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+      <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+
+      <div class="hero-content">
+
+        <div class="hero-logo-wrapper">
+          <img
+            class="hero-logo"
+            src="images/logo.png"
+            alt="Mountain Health Bar"
+          >
+        </div>
+
+        <p
+          class="hero-eyebrow"
+          data-i18n="welcomeEyebrow"
+        >
+          Poolside service
+        </p>
+
+        <h1
+          class="hero-title"
+          data-i18n="welcomeTitle"
+        >
+          How may we assist you?
+        </h1>
+
+        <p
+          class="hero-text"
+          data-i18n="welcomeText"
+        >
+          Select an option below and our team will be notified.
+        </p>
+
+        <div class="location-card">
+
+          <span
+            class="location-label"
+            data-i18n="yourLocation"
+          >
+            Your location
+          </span>
+
+          <strong
+            class="location-value"
+            id="locationName"
+          >
+            Mountain Health Bar
+          </strong>
+
+        </div>
+
+        <div class="primary-actions">
+
+          <button
+            class="action-card action-card-primary"
+            id="serviceButton"
+            type="button"
+            data-request-type="service"
+          >
+            <span class="action-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                role="img"
+                aria-hidden="true"
+              >
+                <path d="M4 13h16"></path>
+                <path d="M6 13a6 6 0 0 1 12 0"></path>
+                <path d="M3 17h18"></path>
+                <path d="M12 4v2"></path>
+              </svg>
+            </span>
+
+            <span class="action-content">
+              <span
+                class="action-title"
+                data-i18n="callService"
+              >
+                Call for Service
+              </span>
+
+              <span
+                class="action-description"
+                data-i18n="callServiceDescription"
+              >
+                A member of our service team will come to you.
+              </span>
+            </span>
+
+            <span class="action-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <button
+            class="action-card"
+            id="towelsButton"
+            type="button"
+            data-request-type="towels"
+          >
+            <span class="action-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                role="img"
+                aria-hidden="true"
+              >
+                <path d="M5 7h11a3 3 0 0 1 0 6H8"></path>
+                <path d="M5 7v10"></path>
+                <path d="M8 13v4"></path>
+                <path d="M5 17h11"></path>
+              </svg>
+            </span>
+
+            <span class="action-content">
+              <span
+                class="action-title"
+                data-i18n="freshTowels"
+              >
+                Fresh Towels
+              </span>
+
+              <span
+                class="action-description"
+                data-i18n="freshTowelsDescription"
+              >
+                Our spa team will bring fresh towels.
+              </span>
+            </span>
+
+            <span class="action-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <button
+            class="action-card"
+            id="menuButton"
+            type="button"
+          >
+            <span class="action-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                role="img"
+                aria-hidden="true"
+              >
+                <path d="M6 4h12"></path>
+                <path d="M6 9h12"></path>
+                <path d="M6 14h8"></path>
+                <path d="M6 19h10"></path>
+              </svg>
+            </span>
+
+            <span class="action-content">
+              <span
+                class="action-title"
+                data-i18n="viewMenu"
+              >
+                View Menu
+              </span>
+
+              <span
+                class="action-description"
+                data-i18n="viewMenuDescription"
+              >
+                Explore our drinks and food selection.
+              </span>
+            </span>
+
+            <span class="action-arrow" aria-hidden="true">↓</span>
+          </button>
+
+        </div>
+
+        <div
+          class="opening-status"
+          id="openingStatus"
+          role="status"
+          aria-live="polite"
+        >
+          <span class="status-dot"></span>
+
+          <span
+            class="status-text"
+            data-i18n="checkingOpeningHours"
+          >
+            Checking opening hours
+          </span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Menu section -->
+    <section class="menu-section" id="menu">
+
+      <div class="menu-container">
+
+        <div class="section-heading">
+
+          <p
+            class="section-eyebrow"
+            data-i18n="menuEyebrow"
+          >
+            Mountain Health Bar
+          </p>
+
+          <h2
+            class="section-title"
+            data-i18n="menuTitle"
+          >
+            Menu
+          </h2>
+
+          <p
+            class="section-description"
+            data-i18n="menuDescription"
+          >
+            Please explore our current selection.
+          </p>
+
+        </div>
+
+        <nav
+          class="menu-navigation"
+          id="menuNavigation"
+          aria-label="Menu categories"
+        >
+          <!-- Created automatically by app.js -->
+        </nav>
+
+        <div
+          class="menu-content"
+          id="menuContent"
+        >
+          <!-- Created automatically from menu-data.js -->
+        </div>
+
+        <footer class="menu-footer">
+
+          <p data-i18n="priceInformation">
+            All prices are stated in euros and include local taxes.
+          </p>
+
+          <p
+            class="menu-note"
+            data-i18n="milkInformation"
+          >
+            Decaffeinated coffee and lactose-free, soy, oat, almond or rice
+            milk are available on request.
+          </p>
+
+        </footer>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Request modal -->
+  <div
+    class="modal"
+    id="requestModal"
+    aria-hidden="true"
+  >
+
+    <div
+      class="modal-backdrop"
+      data-close-modal
+    ></div>
+
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+
+      <button
+        class="modal-close"
+        id="modalCloseButton"
+        type="button"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      <div class="modal-icon" id="modalIcon" aria-hidden="true"></div>
+
+      <p
+        class="modal-eyebrow"
+        data-i18n="requestConfirmation"
+      >
+        Request confirmation
+      </p>
+
+      <h2
+        class="modal-title"
+        id="modalTitle"
+      >
+        Call for Service
+      </h2>
+
+      <p
+        class="modal-text"
+        id="modalText"
+      >
+        Would you like to notify our team?
+      </p>
+
+      <div class="modal-location">
+
+        <span data-i18n="yourLocation">
+          Your location
+        </span>
+
+        <strong id="modalLocationName">
+          Mountain Health Bar
+        </strong>
+
+      </div>
+
+      <div class="modal-actions">
+
+        <button
+          class="secondary-button"
+          id="cancelRequestButton"
+          type="button"
+          data-i18n="cancel"
+        >
+          Cancel
+        </button>
+
+        <button
+          class="primary-button"
+          id="confirmRequestButton"
+          type="button"
+          data-i18n="confirmRequest"
+        >
+          Confirm Request
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Success screen -->
+  <div
+    class="success-overlay"
+    id="successOverlay"
+    aria-hidden="true"
+  >
+
+    <div class="success-card">
+
+      <div class="success-symbol" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 12.5 9.5 17 19 7.5"></path>
+        </svg>
+      </div>
+
+      <p
+        class="success-eyebrow"
+        data-i18n="requestSent"
+      >
+        Request sent
+      </p>
+
+      <h2
+        class="success-title"
+        data-i18n="thankYou"
+      >
+        Thank you
+      </h2>
+
+      <p
+        class="success-text"
+        data-i18n="teamComingSoon"
+      >
+        A member of our team will be with you shortly.
+      </p>
+
+      <div class="success-location">
+
+        <span data-i18n="yourLocation">
+          Your location
+        </span>
+
+        <strong id="successLocationName">
+          Mountain Health Bar
+        </strong>
+
+      </div>
+
+      <button
+        class="secondary-button success-close-button"
+        id="closeSuccessButton"
+        type="button"
+        data-i18n="close"
+      >
+        Close
+      </button>
+
+      <button
+        class="reminder-button hidden"
+        id="reminderButton"
+        type="button"
+        data-i18n="stillWaiting"
+      >
+        Still waiting? Remind our team
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Closed notice -->
+  <div
+    class="closed-panel hidden"
+    id="closedPanel"
+    role="status"
+    aria-live="polite"
+  >
+
+    <div class="closed-panel-content">
+
+      <span class="closed-panel-icon" aria-hidden="true">○</span>
+
+      <div>
+        <strong data-i18n="currentlyClosed">
+          The Mountain Health Bar is currently closed.
+        </strong>
+
+        <p data-i18n="openingHoursMessage">
+          Our opening hours are from 11:00 to 17:00.
+        </p>
+
+        <p data-i18n="contactSpaDirectly">
+          For assistance, please contact our Spa Team directly.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div
+    class="loading-overlay hidden"
+    id="loadingOverlay"
+    aria-hidden="true"
+  >
+
+    <div class="loading-spinner" aria-hidden="true"></div>
+
+    <p data-i18n="sendingRequest">
+      Sending request
+    </p>
+  </div>
+
+  <!-- Toast message -->
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <script src="config.js"></script>
+  <script src="menu-data.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
