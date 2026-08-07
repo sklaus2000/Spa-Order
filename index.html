@@ -118,51 +118,91 @@
           </article>
 
           <article
-            class="guest-info-card weather-card hidden"
+            class="guest-info-card weather-card weather-card-detailed hidden"
             id="weatherCard"
           >
-            <div class="weather-main">
-              <span
-                class="weather-icon"
-                id="weatherIcon"
-                aria-hidden="true"
-              >
-                ○
-              </span>
-
-              <div>
+            <div class="weather-top-row">
+              <div class="weather-main">
                 <span
-                  class="guest-info-eyebrow"
-                  id="weatherLabel"
+                  class="weather-icon"
+                  id="weatherIcon"
+                  aria-hidden="true"
                 >
-                  Weather in Jochberg
+                  ○
                 </span>
 
-                <strong
-                  class="weather-temperature"
-                  id="weatherTemperature"
-                >
+                <div>
+                  <span
+                    class="guest-info-eyebrow"
+                    id="weatherLabel"
+                  >
+                    Weather in Jochberg
+                  </span>
+
+                  <div class="weather-temperature-row">
+                    <strong
+                      class="weather-temperature"
+                      id="weatherTemperature"
+                    >
+                      –
+                    </strong>
+
+                    <span
+                      class="weather-condition"
+                      id="weatherCondition"
+                    >
+                      Loading weather
+                    </span>
+                  </div>
+
+                  <span
+                    class="weather-feels-like"
+                    id="weatherFeelsLike"
+                  >
+                    –
+                  </span>
+                </div>
+              </div>
+
+              <div
+                class="weather-uv"
+                id="weatherUv"
+              >
+                <span>UV</span>
+
+                <strong id="weatherUvValue">
                   –
                 </strong>
 
-                <span
-                  class="weather-condition"
-                  id="weatherCondition"
-                >
-                  Loading weather
-                </span>
+                <small id="weatherUvNote"></small>
               </div>
             </div>
 
-            <div
-              class="weather-uv"
-              id="weatherUv"
-            >
-              <span>UV</span>
+            <div class="weather-details" aria-label="Weather details">
+              <div class="weather-detail">
+                <span data-i18n="humidityLabel">Humidity</span>
+                <strong id="weatherHumidity">–</strong>
+              </div>
 
-              <strong id="weatherUvValue">
-                –
-              </strong>
+              <div class="weather-detail">
+                <span data-i18n="windLabel">Wind</span>
+                <strong id="weatherWind">–</strong>
+              </div>
+
+              <div class="weather-detail">
+                <span data-i18n="sunriseLabel">Sunrise</span>
+                <strong id="weatherSunrise">–</strong>
+              </div>
+
+              <div class="weather-detail">
+                <span data-i18n="sunsetLabel">Sunset</span>
+                <strong id="weatherSunset">–</strong>
+              </div>
+            </div>
+
+            <div class="weather-updated-row">
+              <span data-i18n="updatedLabel">Updated</span>
+              <strong id="weatherUpdated">–</strong>
             </div>
           </article>
 

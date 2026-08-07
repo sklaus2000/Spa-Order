@@ -111,6 +111,13 @@ const translations = {
     temperatureLabel: "Temperature",
     uvLabel: "UV Index",
     weatherUnavailable: "Weather currently unavailable",
+    feelsLikeLabel: "Feels like",
+    humidityLabel: "Humidity",
+    windLabel: "Wind",
+    sunriseLabel: "Sunrise",
+    sunsetLabel: "Sunset",
+    updatedLabel: "Updated",
+    uvAfterSunset: "No UV radiation",
 
     emptyCategory:
       "No items are currently listed in this category."
@@ -201,6 +208,13 @@ const translations = {
     temperatureLabel: "Temperatur",
     uvLabel: "UV-Index",
     weatherUnavailable: "Wetter derzeit nicht verfügbar",
+    feelsLikeLabel: "Gefühlt",
+    humidityLabel: "Luftfeuchtigkeit",
+    windLabel: "Wind",
+    sunriseLabel: "Sonnenaufgang",
+    sunsetLabel: "Sonnenuntergang",
+    updatedLabel: "Aktualisiert",
+    uvAfterSunset: "Keine UV-Strahlung",
 
     emptyCategory:
       "In dieser Kategorie sind derzeit keine Artikel eingetragen."
@@ -287,8 +301,15 @@ const weatherLabel = document.getElementById("weatherLabel");
 const weatherIcon = document.getElementById("weatherIcon");
 const weatherCondition = document.getElementById("weatherCondition");
 const weatherTemperature = document.getElementById("weatherTemperature");
+const weatherFeelsLike = document.getElementById("weatherFeelsLike");
+const weatherHumidity = document.getElementById("weatherHumidity");
+const weatherWind = document.getElementById("weatherWind");
+const weatherSunrise = document.getElementById("weatherSunrise");
+const weatherSunset = document.getElementById("weatherSunset");
+const weatherUpdated = document.getElementById("weatherUpdated");
 const weatherUv = document.getElementById("weatherUv");
 const weatherUvValue = document.getElementById("weatherUvValue");
+const weatherUvNote = document.getElementById("weatherUvNote");
 
 
 /* ----------------------------------------------------------
@@ -323,7 +344,7 @@ async function initializeApp() {
   }
 
   window.setInterval(updateOpeningStatus, 30000);
-  window.setInterval(loadWeather, 30 * 60 * 1000);
+  window.setInterval(loadWeather, 10 * 60 * 1000);
 
   window.requestAnimationFrame(function () {
     document.body.classList.add("app-ready");
@@ -898,9 +919,35 @@ async function loadWeather() {
     }
 
     const result = await response.json();
-
     const current = result.current || {};
+    const hourly = result.hourly || {};
     const daily = result.daily || {};
+
+    const currentTime = String(current.time || "");
+    const sunrise = Array.isArray(daily.sunrise)
+      ? String(daily.sunrise[0] || "")
+      : "";
+    const sunset = Array.isArray(daily.sunset)
+      ? String(daily.sunset[0] || "")
+      : "";
+
+    const isDaylight = isTimeBetween(
+      currentTime,
+      sunrise,
+      sunset
+    );
+
+    let uvIndex = getCurrentHourlyUv(
+      hourly,
+      currentTime
+    );
+
+    // Open-Meteo can return a daytime UV forecast value near the
+    // edges of the day. Once the sun is below the horizon, the
+    // guest-facing value must always be zero.
+    if (!isDaylight) {
+      uvIndex = 0;
+    }
 
     state.weather = {
       temperature:
@@ -908,16 +955,32 @@ async function loadWeather() {
           ? current.temperature_2m
           : null,
 
+      apparentTemperature:
+        typeof current.apparent_temperature === "number"
+          ? current.apparent_temperature
+          : null,
+
+      humidity:
+        typeof current.relative_humidity_2m === "number"
+          ? current.relative_humidity_2m
+          : null,
+
+      windSpeed:
+        typeof current.wind_speed_10m === "number"
+          ? current.wind_speed_10m
+          : null,
+
       weatherCode:
         typeof current.weather_code === "number"
           ? current.weather_code
           : null,
 
-      uvIndex:
-        Array.isArray(daily.uv_index_max) &&
-        typeof daily.uv_index_max[0] === "number"
-          ? daily.uv_index_max[0]
-          : null
+      uvIndex: uvIndex,
+      sunrise: sunrise,
+      sunset: sunset,
+      currentTime: currentTime,
+      isDaylight: isDaylight,
+      loadedAt: new Date()
     };
 
     updateWeatherDisplay();
@@ -930,27 +993,97 @@ async function loadWeather() {
   }
 }
 
+function getCurrentHourlyUv(hourly, currentTime) {
+  if (
+    !hourly ||
+    !Array.isArray(hourly.time) ||
+    !Array.isArray(hourly.uv_index) ||
+    hourly.time.length === 0
+  ) {
+    return null;
+  }
+
+  const targetTimestamp = Date.parse(currentTime);
+
+  if (Number.isNaN(targetTimestamp)) {
+    return null;
+  }
+
+  let closestIndex = -1;
+  let closestDifference = Infinity;
+
+  hourly.time.forEach(function (timeValue, index) {
+    const timestamp = Date.parse(timeValue);
+
+    if (Number.isNaN(timestamp)) {
+      return;
+    }
+
+    const difference = Math.abs(
+      timestamp - targetTimestamp
+    );
+
+    if (difference < closestDifference) {
+      closestDifference = difference;
+      closestIndex = index;
+    }
+  });
+
+  if (closestIndex < 0) {
+    return null;
+  }
+
+  const value = hourly.uv_index[closestIndex];
+
+  return typeof value === "number"
+    ? value
+    : null;
+}
+
+function isTimeBetween(currentTime, startTime, endTime) {
+  const current = Date.parse(currentTime);
+  const start = Date.parse(startTime);
+  const end = Date.parse(endTime);
+
+  if (
+    Number.isNaN(current) ||
+    Number.isNaN(start) ||
+    Number.isNaN(end)
+  ) {
+    return false;
+  }
+
+  return current >= start && current < end;
+}
+
 function updateWeatherDisplay() {
   if (!weatherCard) {
     return;
   }
 
-  weatherLabel.textContent =
-    translations[state.language].weatherLabel;
+  const language = state.language;
+  const text = translations[language];
+
+  weatherLabel.textContent = text.weatherLabel;
 
   if (!state.weather) {
-    weatherCondition.textContent =
-      translations[state.language].weatherUnavailable;
-
+    weatherCondition.textContent = text.weatherUnavailable;
     weatherTemperature.textContent = "–";
+    setWeatherText(weatherFeelsLike, "–");
+    setWeatherText(weatherHumidity, "–");
+    setWeatherText(weatherWind, "–");
+    setWeatherText(weatherSunrise, "–");
+    setWeatherText(weatherSunset, "–");
+    setWeatherText(weatherUpdated, "–");
     weatherUvValue.textContent = "–";
+    setWeatherText(weatherUvNote, "");
     weatherIcon.textContent = "○";
     return;
   }
 
   const weatherDetails = getWeatherCodeDetails(
     state.weather.weatherCode,
-    state.language
+    language
   );
 
   weatherCondition.textContent = weatherDetails.label;
@@ -961,17 +1094,91 @@ function updateWeatherDisplay() {
       ? "–"
       : Math.round(state.weather.temperature) + "°C";
 
+  setWeatherText(
+    weatherFeelsLike,
+    state.weather.apparentTemperature === null
+      ? "–"
+      : text.feelsLikeLabel + " " +
+        Math.round(state.weather.apparentTemperature) + "°C"
+  );
+
+  setWeatherText(
+    weatherHumidity,
+    state.weather.humidity === null
+      ? "–"
+      : Math.round(state.weather.humidity) + "%"
+  );
+
+  setWeatherText(
+    weatherWind,
+    state.weather.windSpeed === null
+      ? "–"
+      : Math.round(state.weather.windSpeed) + " km/h"
+  );
+
+  setWeatherText(
+    weatherSunrise,
+    formatWeatherTime(state.weather.sunrise)
+  );
+
+  setWeatherText(
+    weatherSunset,
+    formatWeatherTime(state.weather.sunset)
+  );
+
+  setWeatherText(
+    weatherUpdated,
+    formatUpdateTime(state.weather.loadedAt)
+  );
+
   weatherUvValue.textContent =
     state.weather.uvIndex === null
       ? "–"
       : formatUvIndex(state.weather.uvIndex);
+
+  setWeatherText(
+    weatherUvNote,
+    state.weather.isDaylight
+      ? ""
+      : text.uvAfterSunset
+  );
+}
+
+function setWeatherText(element, value) {
+  if (element) {
+    element.textContent = value;
+  }
+}
+
+function formatWeatherTime(value) {
+  const match = String(value || "").match(/T(\d{2}:\d{2})/);
+  return match ? match[1] : "–";
+}
+
+function formatUpdateTime(dateValue) {
+  if (!(dateValue instanceof Date)) {
+    return "–";
+  }
+
+  return new Intl.DateTimeFormat(
+    state.language === "de" ? "de-AT" : "en-GB",
+    {
+      timeZone: CONFIG.timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
+    }
+  ).format(dateValue);
 }
 
 function formatUvIndex(value) {
-  const roundedValue = Math.round(value * 10) / 10;
+  const roundedValue = Math.max(
+    0,
+    Math.round(value * 10) / 10
+  );
   const level = getUvLevel(roundedValue, state.language);
 
-  return roundedValue + " · " + level;
+  return roundedValue.toFixed(1) + " · " + level;
 }
 
 function getUvLevel(value, language) {
@@ -1703,3 +1910,4 @@ function wait(milliseconds) {
     window.setTimeout(resolve, milliseconds);
   });
 }
+

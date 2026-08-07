@@ -33,11 +33,12 @@ window.APP_CONFIG = {
     "https://script.google.com/macros/s/AKfycbxUEfzSQbKEnNMXF2x9OnRTMge1eYmazwi5v9EoygSbo15LSZUMMkCzfVhlexPfKPfK/exec?action=settings",
 
   /*
-    Open-Meteo weather for Jochberg.
-    No personal API key is required.
+     Open-Meteo weather for Jochberg.
+     Current conditions + hourly UV + sunrise/sunset.
+     No personal API key is required.
   */
   weatherApiUrl:
-    "https://api.open-meteo.com/v1/forecast?latitude=47.379&longitude=12.418&current=temperature_2m,weather_code&daily=uv_index_max&timezone=Europe%2FVienna&forecast_days=1",
+    "https://api.open-meteo.com/v1/forecast?latitude=47.379&longitude=12.418&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m&hourly=uv_index&daily=sunrise,sunset&timezone=Europe%2FVienna&forecast_days=1",
 
   defaultLocation: {
     en: "Mountain Health Bar",
@@ -76,3 +77,4 @@ window.APP_CONFIG = {
     }
   }
 };
+
